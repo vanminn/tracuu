@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra Cứu Dữ Liệu Excel (5 Số Cuối)</title>
+    <title>Tra Cứu Dữ Liệu (5 Số Cuối)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4f6f9;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center; /* Căn giữa màn hình */
             min-height: 100vh;
             margin: 0;
             padding: 20px;
@@ -18,19 +18,19 @@
 
         .container {
             background-color: white;
-            padding: 30px;
+            padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 500px;
+            max-width: 450px;
             text-align: center;
         }
 
-        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 22px; }
+        h1 { color: #2c3e50; margin-bottom: 30px; font-size: 24px; }
 
         .search-box {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         input {
@@ -38,81 +38,55 @@
             padding: 15px;
             border: 2px solid #dfe6e9;
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 20px;
             text-align: center;
             box-sizing: border-box;
             outline: none;
             transition: border 0.3s;
+            letter-spacing: 2px;
         }
 
         input:focus { border-color: #3498db; }
 
         button {
             width: 100%;
-            padding: 12px;
+            padding: 15px;
             background-color: #3498db;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
             font-weight: bold;
-            margin-bottom: 20px;
+            transition: background 0.3s;
         }
 
         button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #bdc3c7; cursor: not-allowed; }
 
         #ketQua {
-            padding: 15px;
+            margin-top: 30px;
+            padding: 20px;
             border-radius: 8px;
             background-color: #ecf0f1;
             display: none;
-            margin-bottom: 20px;
+            animation: fadeIn 0.5s;
         }
 
         .result-val {
-            font-size: 36px;
+            font-size: 48px; /* Kết quả to hơn */
             font-weight: bold;
             color: #e74c3c;
-            margin: 10px 0;
+            margin: 15px 0;
         }
 
-        .suggestion-box {
-            text-align: left;
-            border-top: 1px solid #eee;
-            padding-top: 15px;
-        }
-
-        .suggestion-title {
-            font-size: 14px;
-            color: #7f8c8d;
-            margin-bottom: 10px;
-            font-style: italic;
-        }
-
-        .chip-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .chip {
-            background-color: #e0e0e0;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .chip:hover { background-color: #bdc3c7; }
-        .chip.active { background-color: #3498db; color: white; }
-        
         /* Hiệu ứng loading */
-        .loading { font-size: 14px; color: #666; font-style: italic; margin-bottom: 10px;}
+        .loading { font-size: 14px; color: #666; font-style: italic; margin-bottom: 15px;}
 
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -120,23 +94,18 @@
     <div class="container">
         <h1>Tra Cứu Kết Quả (5 Số Cuối)</h1>
         
-        <div id="loadingMsg" class="loading">Đang tải dữ liệu...</div>
+        <div id="loadingMsg" class="loading">Đang kết nối dữ liệu...</div>
 
         <div class="search-box">
-            <input type="text" id="inputNum" placeholder="Nhập 5 số cuối (VD: 23269)" maxlength="5" oninput="filterChips()" disabled>
+            <input type="text" id="inputNum" placeholder="Nhập 5 số cuối..." maxlength="5" disabled>
         </div>
         
-        <button onclick="traCuu()" id="btnSearch" disabled>Xem Kết Quả</button>
+        <button onclick="traCuu()" id="btnSearch" disabled>XEM KẾT QUẢ</button>
 
         <div id="ketQua">
-            <div>Kết quả:</div>
+            <div>Kết quả của bạn:</div>
             <div class="result-val" id="valDisplay">--</div>
             <div id="msgDisplay"></div>
-        </div>
-
-        <div class="suggestion-box">
-            <div class="suggestion-title">Danh sách số có trong dữ liệu (Click để chọn):</div>
-            <div class="chip-container" id="chipContainer"></div>
         </div>
     </div>
 
@@ -146,7 +115,6 @@
 
         const inputEl = document.getElementById('inputNum');
         const btnSearch = document.getElementById('btnSearch');
-        const chipContainer = document.getElementById('chipContainer');
         const loadingMsg = document.getElementById('loadingMsg');
 
         // Hàm lấy dữ liệu từ file data.json
@@ -161,39 +129,13 @@
                 loadingMsg.style.display = 'none';
                 inputEl.disabled = false;
                 btnSearch.disabled = false;
-                initChips(); // Tạo danh sách gợi ý
+                inputEl.focus(); // Tự động trỏ chuột vào ô nhập
             })
             .catch(error => {
-                loadingMsg.innerText = "Lỗi: Không tìm thấy file data.json. Hãy kiểm tra lại GitHub!";
+                loadingMsg.innerText = "Lỗi: Không tìm thấy file data.json!";
                 loadingMsg.style.color = "red";
                 console.error(error);
             });
-
-        function initChips() {
-            const sortedKeys = Object.keys(data).sort();
-            sortedKeys.forEach(key => {
-                const chip = document.createElement('div');
-                chip.className = 'chip';
-                chip.innerText = key;
-                chip.onclick = () => {
-                    inputEl.value = key;
-                    traCuu();
-                };
-                chipContainer.appendChild(chip);
-            });
-        }
-
-        function filterChips() {
-            const val = inputEl.value;
-            const chips = document.querySelectorAll('.chip');
-            chips.forEach(chip => {
-                if (chip.innerText.includes(val)) {
-                    chip.style.display = 'block';
-                } else {
-                    chip.style.display = 'none';
-                }
-            });
-        }
 
         function traCuu() {
             const val = inputEl.value.trim();
@@ -201,14 +143,9 @@
             const valDisplay = document.getElementById('valDisplay');
             const msgDisplay = document.getElementById('msgDisplay');
 
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-            const chips = document.querySelectorAll('.chip');
-            for(let chip of chips) {
-                if(chip.innerText === val) {
-                    chip.classList.add('active');
-                    chip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    break;
-                }
+            if (val.length < 5) {
+                alert("Vui lòng nhập đủ 5 số!");
+                return;
             }
 
             if (data.hasOwnProperty(val)) {
@@ -218,12 +155,13 @@
                 resultBox.style.display = "block";
             } else {
                 valDisplay.innerText = "--";
-                msgDisplay.innerText = "Số này KHÔNG CÓ trong file dữ liệu";
+                msgDisplay.innerText = "Số này chưa có trong dữ liệu";
                 msgDisplay.style.color = "red";
                 resultBox.style.display = "block";
             }
         }
         
+        // Bắt sự kiện Enter
         inputEl.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 traCuu();
