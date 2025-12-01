@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra Cứu Dữ Liệu</title>
+    <title>Tra Cứu Dữ Liệu Excel (5 Số Cuối)</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -109,19 +109,24 @@
 
         .chip:hover { background-color: #bdc3c7; }
         .chip.active { background-color: #3498db; color: white; }
+        
+        /* Hiệu ứng loading */
+        .loading { font-size: 14px; color: #666; font-style: italic; margin-bottom: 10px;}
 
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Tra Cứu Kết Quả (Nhập 5 số cuối điện thoại)</h1>
+        <h1>Tra Cứu Kết Quả (5 Số Cuối)</h1>
         
+        <div id="loadingMsg" class="loading">Đang tải dữ liệu...</div>
+
         <div class="search-box">
-            <input type="text" id="inputNum" placeholder="Nhập 5 số cuối (VD: 12345)" maxlength="5" oninput="filterChips()">
+            <input type="text" id="inputNum" placeholder="Nhập 5 số cuối (VD: 23269)" maxlength="5" oninput="filterChips()" disabled>
         </div>
         
-        <button onclick="traCuu()">Xem Kết Quả</button>
+        <button onclick="traCuu()" id="btnSearch" disabled>Xem Kết Quả</button>
 
         <div id="ketQua">
             <div>Kết quả:</div>
@@ -136,11 +141,33 @@
     </div>
 
     <script>
-        // Dữ liệu 5 số cuối (Đã cập nhật tự động)
-        const data = {"23269": [692], "81124": [141], "77127": [121], "31567": [121], "46877": [88], "78387": [61], "27576": [40], "17239": [37], "00223": [19], "30290": [16], "81400": [16], "64739": [16], "57916": [15], "98420": [14], "44687": [14], "43242": [14], "50777": [13], "67598": [13], "18070": [13], "31568": [12], "21189": [12], "35894": [11], "18781": [11], "03479": [11], "13258": [10], "15749": [9], "56424": [9], "35085": [9], "45699": [8], "90818": [8], "19714": [8], "55350": [7], "69164": [7], "58914": [7], "66472": [7], "35068": [7], "86700": [7], "01976": [7], "28010": [7], "86392": [6], "06311": [6], "75670": [6], "69491": [5], "05909": [5], "35150": [5], "88302": [5], "72129": [5], "99419": [5], "32139": [5], "91641": [5], "74841": [4], "30593": [4], "70582": [4], "89472": [4], "76519": [4], "20789": [4], "39907": [4], "39843": [3], "99747": [3], "27575": [3], "18612": [3], "10071": [3], "24860": [3], "76161": [3], "16790": [3], "16023": [3], "03104": [3], "26808": [2], "40070": [2], "47913": [2], "21700": [2], "86423": [2], "03568": [2], "67892": [2], "80108": [2], "51890": [2], "52488": [2], "17535": [2], "44995": [2], "92958": [2], "54789": [2], "10666": [2], "61425": [2], "44132": [2], "99778": [2], "69701": [2], "36832": [2], "79033": [2], "69089": [2], "45068": [2], "40307": [2], "33049": [2], "39097": [2], "12240": [2], "26482": [2], "46658": [2], "49981": [2], "77971": [2], "64905": [2], "46228": [2], "56749": [2], "10397": [2], "07909": [2], "97838": [1], "01799": [1], "23968": [1], "45864": [1], "74457": [1], "46681": [1], "45220": [1], "72948": [1], "20317": [1], "01770": [1], "06668": [1], "35426": [1], "65510": [1], "50289": [1], "11574": [1], "21625": [1], "94823": [1], "78465": [1], "78838": [1], "87076": [1], "90078": [1], "64617": [1], "95508": [1], "51028": [1], "80998": [1], "48028": [1], "26957": [1], "53977": [1], "86707": [1], "63934": [1], "34347": [1], "27744": [1], "81801": [1], "45710": [1], "20952": [1], "58118": [1], "57383": [1], "39008": [1], "06930": [1], "72140": [1], "84590": [1], "42911": [1], "51157": [1], "34136": [1], "10110": [1], "81408": [1], "49547": [1], "40243": [1], "60233": [1], "19957": [1], "89140": [1], "06424": [1]};
+        // Biến lưu dữ liệu
+        let data = {};
 
         const inputEl = document.getElementById('inputNum');
+        const btnSearch = document.getElementById('btnSearch');
         const chipContainer = document.getElementById('chipContainer');
+        const loadingMsg = document.getElementById('loadingMsg');
+
+        // Hàm lấy dữ liệu từ file data.json
+        fetch('data.json')
+            .then(response => {
+                if (!response.ok) throw new Error("Không thể tải file data.json");
+                return response.json();
+            })
+            .then(json => {
+                data = json;
+                // Tải xong thì mở khóa nhập liệu
+                loadingMsg.style.display = 'none';
+                inputEl.disabled = false;
+                btnSearch.disabled = false;
+                initChips(); // Tạo danh sách gợi ý
+            })
+            .catch(error => {
+                loadingMsg.innerText = "Lỗi: Không tìm thấy file data.json. Hãy kiểm tra lại GitHub!";
+                loadingMsg.style.color = "red";
+                console.error(error);
+            });
 
         function initChips() {
             const sortedKeys = Object.keys(data).sort();
@@ -186,18 +213,16 @@
 
             if (data.hasOwnProperty(val)) {
                 valDisplay.innerText = data[val].join(" , ");
-                msgDisplay.innerText = "Tìm thấy dữ liệu";
+                msgDisplay.innerText = "Tìm thấy trong dữ liệu";
                 msgDisplay.style.color = "green";
                 resultBox.style.display = "block";
             } else {
                 valDisplay.innerText = "--";
-                msgDisplay.innerText = "Số này KHÔNG CÓ dữ liệu";
+                msgDisplay.innerText = "Số này KHÔNG CÓ trong file dữ liệu";
                 msgDisplay.style.color = "red";
                 resultBox.style.display = "block";
             }
         }
-
-        initChips();
         
         inputEl.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
