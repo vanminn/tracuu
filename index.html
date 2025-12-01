@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra Cứu Dữ Liệu</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 22px; }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #dfe6e9;
+            border-radius: 8px;
+            font-size: 18px;
+            text-align: center;
+            box-sizing: border-box;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input:focus { border-color: #3498db; }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        button:hover { background-color: #2980b9; }
+
+        #ketQua {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #ecf0f1;
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .result-val {
+            font-size: 36px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 10px 0;
+        }
+
+        .suggestion-box {
+            text-align: left;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .suggestion-title {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .chip {
+            background-color: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chip:hover { background-color: #bdc3c7; }
+        .chip.active { background-color: #3498db; color: white; }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Tra Cứu Kết Quả (Nhập 5 số cuối điện thoại)</h1>
+        
+        <div class="search-box">
+            <input type="text" id="inputNum" placeholder="Nhập 5 số cuối (VD: 12345)" maxlength="5" oninput="filterChips()">
+        </div>
+        
+        <button onclick="traCuu()">Xem Kết Quả</button>
+
+        <div id="ketQua">
+            <div>Kết quả:</div>
+            <div class="result-val" id="valDisplay">--</div>
+            <div id="msgDisplay"></div>
+        </div>
+
+        <div class="suggestion-box">
+            <div class="suggestion-title">Danh sách số có trong dữ liệu (Click để chọn):</div>
+            <div class="chip-container" id="chipContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Dữ liệu 5 số cuối (Đã cập nhật tự động)
+        const data = {"23269": [692], "81124": [141], "77127": [121], "31567": [121], "46877": [88], "78387": [61], "27576": [40], "17239": [37], "00223": [19], "30290": [16], "81400": [16], "64739": [16], "57916": [15], "98420": [14], "44687": [14], "43242": [14], "50777": [13], "67598": [13], "18070": [13], "31568": [12], "21189": [12], "35894": [11], "18781": [11], "03479": [11], "13258": [10], "15749": [9], "56424": [9], "35085": [9], "45699": [8], "90818": [8], "19714": [8], "55350": [7], "69164": [7], "58914": [7], "66472": [7], "35068": [7], "86700": [7], "01976": [7], "28010": [7], "86392": [6], "06311": [6], "75670": [6], "69491": [5], "05909": [5], "35150": [5], "88302": [5], "72129": [5], "99419": [5], "32139": [5], "91641": [5], "74841": [4], "30593": [4], "70582": [4], "89472": [4], "76519": [4], "20789": [4], "39907": [4], "39843": [3], "99747": [3], "27575": [3], "18612": [3], "10071": [3], "24860": [3], "76161": [3], "16790": [3], "16023": [3], "03104": [3], "26808": [2], "40070": [2], "47913": [2], "21700": [2], "86423": [2], "03568": [2], "67892": [2], "80108": [2], "51890": [2], "52488": [2], "17535": [2], "44995": [2], "92958": [2], "54789": [2], "10666": [2], "61425": [2], "44132": [2], "99778": [2], "69701": [2], "36832": [2], "79033": [2], "69089": [2], "45068": [2], "40307": [2], "33049": [2], "39097": [2], "12240": [2], "26482": [2], "46658": [2], "49981": [2], "77971": [2], "64905": [2], "46228": [2], "56749": [2], "10397": [2], "07909": [2], "97838": [1], "01799": [1], "23968": [1], "45864": [1], "74457": [1], "46681": [1], "45220": [1], "72948": [1], "20317": [1], "01770": [1], "06668": [1], "35426": [1], "65510": [1], "50289": [1], "11574": [1], "21625": [1], "94823": [1], "78465": [1], "78838": [1], "87076": [1], "90078": [1], "64617": [1], "95508": [1], "51028": [1], "80998": [1], "48028": [1], "26957": [1], "53977": [1], "86707": [1], "63934": [1], "34347": [1], "27744": [1], "81801": [1], "45710": [1], "20952": [1], "58118": [1], "57383": [1], "39008": [1], "06930": [1], "72140": [1], "84590": [1], "42911": [1], "51157": [1], "34136": [1], "10110": [1], "81408": [1], "49547": [1], "40243": [1], "60233": [1], "19957": [1], "89140": [1], "06424": [1]};
+
+        const inputEl = document.getElementById('inputNum');
+        const chipContainer = document.getElementById('chipContainer');
+
+        function initChips() {
+            const sortedKeys = Object.keys(data).sort();
+            sortedKeys.forEach(key => {
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerText = key;
+                chip.onclick = () => {
+                    inputEl.value = key;
+                    traCuu();
+                };
+                chipContainer.appendChild(chip);
+            });
+        }
+
+        function filterChips() {
+            const val = inputEl.value;
+            const chips = document.querySelectorAll('.chip');
+            chips.forEach(chip => {
+                if (chip.innerText.includes(val)) {
+                    chip.style.display = 'block';
+                } else {
+                    chip.style.display = 'none';
+                }
+            });
+        }
+
+        function traCuu() {
+            const val = inputEl.value.trim();
+            const resultBox = document.getElementById('ketQua');
+            const valDisplay = document.getElementById('valDisplay');
+            const msgDisplay = document.getElementById('msgDisplay');
+
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            const chips = document.querySelectorAll('.chip');
+            for(let chip of chips) {
+                if(chip.innerText === val) {
+                    chip.classList.add('active');
+                    chip.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    break;
+                }
+            }
+
+            if (data.hasOwnProperty(val)) {
+                valDisplay.innerText = data[val].join(" , ");
+                msgDisplay.innerText = "Tìm thấy dữ liệu";
+                msgDisplay.style.color = "green";
+                resultBox.style.display = "block";
+            } else {
+                valDisplay.innerText = "--";
+                msgDisplay.innerText = "Số này KHÔNG CÓ dữ liệu";
+                msgDisplay.style.color = "red";
+                resultBox.style.display = "block";
+            }
+        }
+
+        initChips();
+        
+        inputEl.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                traCuu();
+            }
+        });
+    </script>
+</body>
+</html>
