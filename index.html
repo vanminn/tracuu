@@ -10,7 +10,7 @@
             background-color: #f4f6f9;
             display: flex;
             justify-content: center;
-            align-items: center; /* Căn giữa màn hình */
+            align-items: center;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
@@ -28,8 +28,8 @@
 
         h1 { color: #2c3e50; margin-bottom: 30px; font-size: 24px; }
 
-        .search-box {
-            position: relative;
+        .search-wrapper {
+            position: relative; /* Quan trọng để neo danh sách gợi ý */
             margin-bottom: 25px;
         }
 
@@ -47,6 +47,40 @@
         }
 
         input:focus { border-color: #3498db; }
+
+        /* Style cho danh sách gợi ý (Dropdown) */
+        .suggestions-list {
+            position: absolute;
+            top: 100%; /* Hiện ngay dưới ô input */
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #dfe6e9;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px; /* Chiều cao tối đa */
+            overflow-y: auto; /* Cho phép cuộn */
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none; /* Ẩn mặc định */
+            text-align: left;
+        }
+
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+        .suggestion-item:last-child { border-bottom: none; }
+        
+        .suggestion-item:hover {
+            background-color: #f4f6f9;
+            color: #3498db;
+            font-weight: bold;
+        }
 
         button {
             width: 100%;
@@ -74,13 +108,12 @@
         }
 
         .result-val {
-            font-size: 48px; /* Kết quả to hơn */
+            font-size: 48px;
             font-weight: bold;
             color: #e74c3c;
             margin: 15px 0;
         }
 
-        /* Hiệu ứng loading */
         .loading { font-size: 14px; color: #666; font-style: italic; margin-bottom: 15px;}
 
         @keyframes fadeIn {
@@ -96,8 +129,9 @@
         
         <div id="loadingMsg" class="loading">Đang kết nối dữ liệu...</div>
 
-        <div class="search-box">
-            <input type="text" id="inputNum" placeholder="Nhập 5 số cuối..." maxlength="5" disabled>
+        <div class="search-wrapper">
+            <input type="text" id="inputNum" placeholder="Nhập số để tìm..." maxlength="5" disabled autocomplete="off">
+            <div id="suggestions" class="suggestions-list"></div>
         </div>
         
         <button onclick="traCuu()" id="btnSearch" disabled>XEM KẾT QUẢ</button>
@@ -110,26 +144,28 @@
     </div>
 
     <script>
-        // Biến lưu dữ liệu
         let data = {};
+        let keys = []; // Mảng chứa danh sách các số để tìm kiếm nhanh hơn
 
         const inputEl = document.getElementById('inputNum');
         const btnSearch = document.getElementById('btnSearch');
         const loadingMsg = document.getElementById('loadingMsg');
+        const suggestionBox = document.getElementById('suggestions');
 
-        // Hàm lấy dữ liệu từ file data.json
+        // Tải dữ liệu từ data.json
         fetch('data.json')
             .then(response => {
-                if (!response.ok) throw new Error("Không thể tải file data.json");
+                if (!response.ok) throw new Error("Lỗi tải file data.json");
                 return response.json();
             })
             .then(json => {
                 data = json;
-                // Tải xong thì mở khóa nhập liệu
+                keys = Object.keys(data).sort(); // Lấy danh sách số và sắp xếp
+                
                 loadingMsg.style.display = 'none';
                 inputEl.disabled = false;
                 btnSearch.disabled = false;
-                inputEl.focus(); // Tự động trỏ chuột vào ô nhập
+                inputEl.focus();
             })
             .catch(error => {
                 loadingMsg.innerText = "Lỗi: Không tìm thấy file data.json!";
@@ -137,15 +173,57 @@
                 console.error(error);
             });
 
+        // Xử lý sự kiện khi gõ phím (Hiện gợi ý)
+        inputEl.addEventListener('input', function() {
+            const val = this.value;
+            suggestionBox.innerHTML = ''; // Xóa gợi ý cũ
+            
+            if (!val) {
+                suggestionBox.style.display = 'none';
+                return;
+            }
+
+            // Lọc ra các số có chứa chuỗi đang nhập (Tối đa 10 gợi ý)
+            const matches = keys.filter(k => k.includes(val)).slice(0, 10);
+
+            if (matches.length > 0) {
+                matches.forEach(match => {
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerText = match;
+                    // Khi click vào gợi ý
+                    div.onclick = function() {
+                        inputEl.value = match;
+                        suggestionBox.style.display = 'none';
+                        traCuu(); // Tự động tra cứu luôn
+                    };
+                    suggestionBox.appendChild(div);
+                });
+                suggestionBox.style.display = 'block';
+            } else {
+                suggestionBox.style.display = 'none';
+            }
+        });
+
+        // Ẩn gợi ý khi click ra ngoài
+        document.addEventListener('click', function(e) {
+            if (e.target !== inputEl && e.target !== suggestionBox) {
+                suggestionBox.style.display = 'none';
+            }
+        });
+
         function traCuu() {
             const val = inputEl.value.trim();
             const resultBox = document.getElementById('ketQua');
             const valDisplay = document.getElementById('valDisplay');
             const msgDisplay = document.getElementById('msgDisplay');
 
+            // Ẩn gợi ý khi ấn nút
+            suggestionBox.style.display = 'none';
+
             if (val.length < 5) {
-                alert("Vui lòng nhập đủ 5 số!");
-                return;
+                // Nếu chưa đủ 5 số, vẫn cho phép tìm nhưng cảnh báo nhẹ
+                // Hoặc bạn có thể chặn luôn bằng alert
             }
 
             if (data.hasOwnProperty(val)) {
@@ -161,10 +239,11 @@
             }
         }
         
-        // Bắt sự kiện Enter
+        // Enter thì tra cứu
         inputEl.addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 traCuu();
+                suggestionBox.style.display = 'none';
             }
         });
     </script>
